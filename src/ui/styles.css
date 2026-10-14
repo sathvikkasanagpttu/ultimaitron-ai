@@ -57,8 +57,25 @@ body {
   transition: opacity 420ms ease;
 }
 
-#ui.hidden {
+#ui.hidden .hud-left,
+#ui.hidden .hud-right,
+#ui.hidden .hud-top,
+#ui.hidden .hud-mode,
+#ui.hidden .hud-legend,
+#ui.hidden .toasts,
+#ui.hidden .privacy {
   opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+#ui.hidden .controls {
+  opacity: 0.35;
+  transition: opacity 280ms ease;
+}
+
+#ui.hidden .controls:hover {
+  opacity: 1;
 }
 
 /* --------------------------------------------------------------- primitives */

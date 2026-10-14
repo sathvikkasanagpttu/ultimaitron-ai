@@ -171,12 +171,17 @@ export class HandTracker {
     if (now - this.lastInferenceAt < interval || this.pipeline.isBusy) return;
     this.lastInferenceAt = now;
 
-    void this.pipeline.detect(this.feed.video, now).then((result) => {
-      if (!result || !this.enabled) return;
-      this.inferenceMs = result.inferenceMs;
-      this.events.emit('inference', { ms: result.inferenceMs, timestamp: result.timestamp });
-      this.ingest(result.hands, now);
-    });
+    void this.pipeline
+      .detect(this.feed.video, now)
+      .then((result) => {
+        if (!result || !this.enabled) return;
+        this.inferenceMs = result.inferenceMs;
+        this.events.emit('inference', { ms: result.inferenceMs, timestamp: result.timestamp });
+        this.ingest(result.hands, now);
+      })
+      .catch((error) => {
+        console.warn('[vision] detect failed:', error);
+      });
   }
 
   /* ------------------------------------------------------------------ */

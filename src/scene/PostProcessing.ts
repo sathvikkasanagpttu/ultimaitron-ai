@@ -122,5 +122,7 @@ export class PostProcessing {
   dispose(): void {
     this.composer.dispose();
     this.bloom.dispose();
+    this.composite.material.dispose();
+    this.composite.fsQuad.dispose();
   }
 }

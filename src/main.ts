@@ -562,7 +562,7 @@ class Application {
     const cameraLabel = usingCamera
       ? CAMERA_STATE_LABEL[this.lastCameraState]
       : this.tracker.state === 'DENIED'
-        ? 'POINTER CONTROL'
+        ? 'POINTER (CAMERA DENIED)'
         : 'POINTER CONTROL';
 
     const level =
