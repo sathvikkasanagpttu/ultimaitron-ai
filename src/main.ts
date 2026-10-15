@@ -341,7 +341,7 @@ class Application {
       const res = await fetch('/api/health');
       if (res.ok) {
         const data = await res.json();
-        this.backendConnected = data.status === 'ok';
+        this.backendConnected = data.status === 'ok' || data.status === 'healthy';
       } else {
         this.backendConnected = false;
       }

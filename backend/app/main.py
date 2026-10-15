@@ -182,3 +182,22 @@ async def chat_stream(payload: ChatRequest, request: Request) -> StreamingRespon
             raise
 
     return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.post("/api/chat")
+async def chat_v2_endpoint(request: Request) -> StreamingResponse:
+    from backend.routers.chat import chat_stream as v2_chat_stream
+    return await v2_chat_stream(request)
+
+
+@app.post("/api/documents/upload")
+async def upload_document_v2(file: UploadFile = File(...)):
+    from backend.routers.documents import upload_document as v2_upload
+    return await v2_upload(file)
+
+
+@app.get("/api/commands")
+async def list_commands_v2():
+    from backend.services.command_registry import get_tool_definitions
+    return {"commands": get_tool_definitions()}
+

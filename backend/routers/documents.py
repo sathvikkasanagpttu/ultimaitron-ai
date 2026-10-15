@@ -6,6 +6,8 @@ from typing import List
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 @router.post("/upload", response_model=DocumentUploadResponse)
+@router.post("", response_model=DocumentUploadResponse, include_in_schema=False)
+@router.post("/", response_model=DocumentUploadResponse, include_in_schema=False)
 async def upload_document(file: UploadFile = File(...)):
     filename = file.filename or "uploaded_document"
     try:
@@ -26,6 +28,7 @@ async def upload_document(file: UploadFile = File(...)):
     )
 
 @router.get("", response_model=List[DocumentItem])
+@router.get("/", response_model=List[DocumentItem], include_in_schema=False)
 async def list_documents():
     return rag_store.get_document_list()
 
@@ -36,6 +39,8 @@ async def delete_document(doc_id: str):
         raise HTTPException(status_code=404, detail="Document not found.")
     return {"status": "ok", "message": f"Document {doc_id} deleted."}
 
+@router.delete("", include_in_schema=False)
+@router.delete("/", include_in_schema=False)
 @router.post("/clear")
 async def clear_documents():
     rag_store.clear()
