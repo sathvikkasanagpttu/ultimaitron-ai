@@ -7,7 +7,7 @@
 export const IDENTITY = {
   name: 'Ultimaitron AI',
   subtitle: 'NEURAL INTELLIGENCE CORE',
-  build: 'v1.0.0 / NX-7',
+  build: 'v2.0.0 / NX-7',
 } as const;
 
 /** Palette. Kept as hex numbers for three.js and as CSS strings for the HUD. */

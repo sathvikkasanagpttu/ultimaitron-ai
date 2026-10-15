@@ -1,7 +1,7 @@
 {
   "name": "ultimaitron-ai",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Ultimaitron AI — a webcam- and gesture-controlled holographic neural AI core built with Three.js and MediaPipe.",
   "type": "module",
   "scripts": {

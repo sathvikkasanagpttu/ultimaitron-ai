@@ -17,7 +17,7 @@ from .schemas import ChatRequest, DocumentClearResponse, DocumentInfo, DocumentL
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("ultimaitron.api")
 settings = get_settings()
-app = FastAPI(title="Ultimaitron AI API", version="1.0.0")
+app = FastAPI(title="Ultimaitron AI API", version="2.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
