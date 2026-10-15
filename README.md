@@ -1,225 +1,550 @@
 # ULTIMAITRON AI 2.0 — Holographic AI Companion Interface
 
 <p align="center">
-  <strong>Gesture-Controlled Holographic Neural Core · Real-time Computer Vision · Multi-Provider Streaming LLM · Voice STT/TTS · Document Knowledge Vault</strong>
+  <img src="https://img.shields.io/badge/Three.js-r185-000000?style=for-the-badge&logo=three.dot.js&logoColor=white" alt="Three.js" />
+  <img src="https://img.shields.io/badge/WebGL-2.0%20%2F%20GLSL-990000?style=for-the-badge&logo=webgl&logoColor=white" alt="WebGL" />
+  <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/MediaPipe-Tasks%20Vision-00897B?style=for-the-badge&logo=google&logoColor=white" alt="MediaPipe" />
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Python-3.12%20%7C%203.14-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Docker-Multi--Container-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
+</p>
+
+<p align="center">
+  <strong>A gesture-controlled holographic artificial intelligence core powered by WebGL/GLSL, MediaPipe computer vision, Web Speech STT/TTS, and a FastAPI Server-Sent Events (SSE) streaming backend with multi-provider LLM support and RAG document grounding.</strong>
 </p>
 
 ---
 
-## 1. System Architecture
+## 📑 Table of Contents
 
-ULTIMAITRON AI 2.0 transforms procedural 3D real-time graphics into an interactive, full-stack AI holographic companion. The system bridges local browser computer vision, spatial mathematics, WebGL GLSL shaders, Web Speech audio, and a high-performance Python FastAPI backend orchestrating LLM streaming, safe function calling, and RAG document retrieval.
+1. [System Overview & Architecture](#1-system-overview--architecture)
+2. [3D Graphics, Animations & Visual Effects](#2-3d-graphics-animations--visual-effects)
+3. [Mathematical Foundations & Shader Formulations](#3-mathematical-foundations--shader-formulations)
+4. [Computer Vision & Gesture Control](#4-computer-vision--gesture-control)
+5. [AI Companion Brain & Streaming Backend](#5-ai-companion-brain--streaming-backend)
+6. [Central Command Registry & Tool Calling](#6-central-command-registry--tool-calling)
+7. [Voice Interaction & Phonetic Waveforms](#7-voice-interaction--phonetic-waveforms)
+8. [Document Knowledge Vault (RAG)](#8-document-knowledge-vault-rag)
+9. [Aerospace HUD & Diagnostics Telemetry](#9-aerospace-hud--diagnostics-telemetry)
+10. [Repository Directory Structure](#10-repository-directory-structure)
+11. [Quick Start & Local Setup](#11-quick-start--local-setup)
+12. [Docker Deployment](#12-docker-deployment)
+13. [Verification & Test Suites](#13-verification--test-suites)
+14. [Keyboard & Gesture Reference](#14-keyboard--gesture-reference)
+15. [Limitations & Design Trade-offs](#15-limitations--design-trade-offs)
+16. [License](#16-license)
+
+---
+
+## 1. System Overview & Architecture
+
+ULTIMAITRON AI 2.0 unites real-time 3D spatial computing, local edge computer vision, and high-performance server-side LLM inference into a unified aerospace holographic interface. 
+
+The application runs an unthrottled WebGL rendering loop decoupled from network I/O, ensuring that token streaming, audio processing, and document retrieval never induce framerate stalls or render hitches.
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Browser (TypeScript + Three.js + WebGL)"]
-        Sensors["Optical & Acoustic Sensors<br/>(Webcam / Mic)"] --> Vision["MediaPipe Tasks Vision<br/>(21 3D Landmarks / Worker)"]
-        Sensors --> Speech["Web Speech API<br/>(STT Recognition / TTS Voice)"]
+    subgraph Client ["Client Interface (TypeScript · Three.js · WebGL 2.0)"]
+        Sensors["Webcam & Microphone Sensors"] -->|"Video Frames (Local)"| Vision["MediaPipe Tasks-Vision Worker<br/>(21 3D Landmarks @ 60 FPS)"]
+        Sensors -->|"Audio Stream (Local)"| Speech["Web Speech API<br/>(STT Recognition / TTS Output)"]
         
-        Vision --> Gestures["Gesture Engine & State Machine<br/>(Palm, Pinch, Fist, Thumbs-Up, Swipe)"]
-        Gestures --> InputAdapter["Input Adapter & Math Utils<br/>(One Euro Filter + Hysteresis)"]
+        Vision --> Gestures["Gesture Engine<br/>(Palm · Pinch · Fist · Thumbs-Up · Swipe)"]
+        Gestures --> Filter["One Euro Filter & Debouncer<br/>(fc = 1.2 Hz, β = 0.007)"]
+        Filter --> Interaction["3D Spatial Interaction Pipeline<br/>(World Attraction · Rotational Torque · Beams)"]
         
-        InputAdapter --> Scene3D["Three.js Holographic Core<br/>(GLSL Shaders / 5 Modes / 100k+ Particles)"]
-        Speech --> AIState["AI State Manager<br/>(IDLE · LISTENING · THINKING · SPEAKING · SCANNING · ERROR)"]
+        Interaction --> Orb3D["Holographic Neural Orb<br/>(Custom GLSL · 100k+ Particles · 5 Modes)"]
+        Interaction --> VFX["Procedural VFX Engine<br/>(Beams · Bursts · Trails · Scan Arc · Reticle)"]
         
-        AIState --> Scene3D
-        AIState --> HUD["HUD Panels<br/>(Chat Transcript · Diagnostics · Knowledge Vault)"]
+        Speech --> AIState["AI Hologram State Machine<br/>(IDLE · LISTENING · THINKING · SPEAKING · SCANNING · ERROR)"]
+        AIState -->|"Shader Uniforms (uEnergy, uWarm, uPulse)"| Orb3D
+        AIState -->|"Alert Wash & Aberration"| Post["Post-Processing Pipeline<br/>(Bloom · Vignette · Chromatic Aberration)"]
+        
+        HUD["Aerospace HUD Panels<br/>(Chat Transcript · Diagnostics · Knowledge Vault)"]
     end
 
-    subgraph Backend ["FastAPI Secure Backend (Python 3.12 / 3.14)"]
-        SSE["SSE Streaming Chat Router<br/>(/api/chat)"]
-        RAG["RAG Document Store<br/>(TF-IDF Cosine Retrieval)"]
-        CommandRegistry["Command Allowlist Registry<br/>(Strict Schema Validation)"]
-        Providers["Multi-Provider LLM Gateway<br/>(Anthropic · OpenAI · Ollama · Offline Mock)"]
+    subgraph Server ["Backend Gateway (FastAPI · Python 3.12 / 3.14 · Uvicorn)"]
+        SSEEndpoint["SSE Chat Streaming Router<br/>(/api/chat)"]
+        RAGService["Document RAG Store<br/>(TF-IDF Cosine Retrieval)"]
+        CommandRegistry["Command Allowlist Registry<br/>(Pydantic Schema Validation)"]
+        Providers["Multi-Provider LLM Gateway<br/>(Claude 3.5 · OpenAI GPT-4o · Ollama · Offline Mock)"]
         
-        SSE --> CommandRegistry
-        SSE --> RAG
-        SSE --> Providers
+        SSEEndpoint --> CommandRegistry
+        SSEEndpoint --> RAGService
+        SSEEndpoint --> Providers
     end
 
-    HUD <-->|"SSE Stream (Token & Tool Events)"| SSE
-    HUD <-->|"Multipart Upload (PDF / TXT)"| RAG
-    CommandRegistry -->|"Validated Tool Calls"| Scene3D
+    HUD <-->|"Server-Sent Events (SSE Stream)"| SSEEndpoint
+    HUD <-->|"Multipart Form (TXT / PDF Upload)"| RAGService
+    CommandRegistry -->|"Validated Tool Calls (JSON)"| Interaction
 ```
 
 ---
 
-## 2. Core Capabilities
+## 2. 3D Graphics, Animations & Visual Effects
 
-### 🧠 Real Multi-Provider AI Brain
-- **Streaming Server-Sent Events (SSE)**: Streams tokens in real time directly to the holographic transcript with measurable Time to First Token (TTFT) and total response latency.
-- **Provider Adapters**:
-  - **Anthropic Claude** (`claude-3-5-sonnet-20241022`)
-  - **OpenAI** (`gpt-4o-mini`, `gpt-4o`)
-  - **Ollama** (`llama3.2`, `mistral`, local models)
-  - **Intelligent Offline Mock Assistant**: Zero-setup, runs out of the box with zero credentials, answering technical queries and executing system tools.
-- **Strict Credential Isolation**: All API keys remain strictly on the backend; never exposed to the client browser.
+The core rendering engine is constructed with **Three.js (r185)** and custom **GLSL vertex and fragment shaders**, completely avoiding high-level abstractions to ensure zero per-frame garbage collection allocations ($0\text{ bytes/frame}$).
 
-### 🔮 Holographic Shader Core & AI State Synchronization
-The neural orb synchronizes dynamically across 6 operational states, altering GLSL uniform parameters:
-- **`IDLE`**: Baseline harmonic breathing, cyan spectral glow ($\lambda \approx 490\text{nm}$), nominal synapse pulse frequency.
-- **`LISTENING`**: Elevated energy baseline, acoustic sensitivity halo, pulse expansion.
-- **`THINKING`**: Rapid synaptic wavefront acceleration, chromatic turbulence, amber undertones.
-- **`SPEAKING`**: Multi-harmonic voice amplitude modulation driving surface ripples and core luminosity.
-- **`SCANNING`**: Directional radar sweep arc, high-frequency coordinate targeting.
-- **`ERROR`**: Crimson warning wash, post-processing vignette glitch, rapid distress flutter.
+### 2.1 The Neural Orb Subsystems
 
-### 🛡️ Central Command Registry & Safe Function Calling
-AI agents can manipulate the 3D hologram **only** through explicitly validated commands registered in the backend allowlist:
-| Permitted Action | Parameters | Description |
-|---|---|---|
-| `change_orb_mode` | `mode: NEURAL \| REACTOR \| DATA \| ENERGY \| SCANNER` | Smoothly morphs shader profiles and topology. |
-| `fire_pulse` | `intensity: 0.1 .. 3.0` | Dispatches spherical shockwave through vertex network. |
-| `trigger_burst` | `warm: 0.0 .. 1.0` | Ejects high-velocity particle plume and expands core. |
-| `set_orb_scale` | `scale: 0.6 .. 1.8` | Modulates hologram physical footprint. |
-| `set_warmth` | `warmth: 0.0 .. 1.0` | Shifts color temperature from cyan to golden amber. |
-| `open_panel` | `panel: chat \| diagnostics \| knowledge` | Opens or toggles HUD telemetry interfaces. |
-| `reset_system` | `none` | Re-centers camera rig, resets scale, and restores NEURAL mode. |
+The central hologram consists of five coordinated procedural layers:
 
-*Arbitrary code execution generated by an LLM is categorically rejected by the backend Pydantic validation schema.*
+1. **`ParticleSystem` (Neural Lattice)**:
+   - Up to **120,000+ points** positioned via recursive icosahedral geodesic tessellation.
+   - Deformed along surface normal vectors by dual-octave 3D Simplex noise.
+   - Vertices store custom attributes: base positions, cluster IDs, phase offsets, and connectivity indices.
 
-### 🎙️ Speech Interaction & Phonetic Cadence
-- **Speech-to-Text (STT)**: Hands-free voice queries using the browser Web Speech API with interim transcripts and error detection.
-- **Text-to-Speech (TTS)**: High-fidelity natural voice output with automatic markdown stripping.
-- **Phonetic Amplitude Simulation**: Voice output calculates an authentic multi-harmonic amplitude envelope:
-  $$A(t) = 0.5 + 0.3 \sin(0.7 \omega t) + 0.15 \sin(2.1 \omega t) + 0.1 \sin(4.3 \omega t)$$
-  modulating the orb surface ripple without requiring insecure audio loopback nodes.
-- **User Privacy & Consent**: Microphone access is user-initiated; audio frames never leave the client.
+2. **`NeuralNetwork` (Dynamic Synapses)**:
+   - Up to **10,000 active line segments** rendered as non-indexed geometry.
+   - Dynamically calculates euclidean distance thresholds between adjacent particle clusters.
+   - Modulated by spherical energy pulse wavefronts propagating outward from coordinate $(0,0,0)$.
 
-### 🖐️ Computer Vision & Gesture State Machine
-- **MediaPipe Tasks-Vision**: 21 3D hand landmarks processed in a background Web Worker (60 FPS on GPU delegate, fallback to WASM).
-- **Temporal Stability**: One Euro filtering ($f_c = 1.2\text{Hz}, \beta = 0.007$) eliminates jitter; state debouncing ($120\text{ms}$) prevents edge flapping.
-- **Recognized Gestures**:
-  - `OPEN_PALM`: Energizes the neural core and fires concentric pulses.
-  - `PINCH`: Target acquisition and interactive rotation/drag.
-  - `FIST`: Contracts particle radius and arms high-energy burst on release.
-  - `THUMBS_UP`: Action confirmation and affirmative companion response.
-  - `SWIPE`: Cyclical mode switching with spatial direction gating.
-- **Mouse / Touch Fallback**: Automatic steering, pinch-drag, and wheel zoom when optical sensors are offline.
+3. **`EnergyCore` (Inner Fusion Core)**:
+   - High-density inner sphere with additive blending.
+   - Renders volumetric Rayleigh scattering glow and rapid inner plasma oscillations.
 
-### 📚 Document Knowledge Vault (RAG)
-- **Multi-Format Ingestion**: Drag-and-drop or upload TXT, PDF, MD, or JSON documents up to 10 MB.
-- **Recursive Chunking**: Overlapping 400-character windows preserve semantic continuity.
-- **Lexical Cosine Retrieval**: TF-IDF vector ranking extracts relevant passages into the prompt with source citations (`[filename.pdf #Chunk 2]`).
-- **Grounding Integrity**: System explicitly flags when uploaded documents lack sufficient evidence to answer.
+4. **`OrbitalRings` (Gyro Gimbal)**:
+   - Nested concentric holographic rings orbiting at golden-ratio angular velocity ratios ($\phi \approx 1.618$).
+   - Features micro-tick calibration marks and azimuth orientation indicators.
 
-### 📊 Real-Time Diagnostics & Performance Dashboard
-Displays genuine runtime measurements without fabricated telemetry:
-- Render FPS & Frame Time ($\text{ms}$)
-- Optical Gesture Latency ($\text{ms}$) & Inference Frequency ($\text{Hz}$)
-- AI Time to First Token (TTFT $\text{ms}$) & Total Response Time ($\text{ms}$)
-- Optical / Acoustic Sensor States
-- Backend API Connectivity & Provider Tier
-- Active Particles ($24,000$ to $120,000+$) & GPU Draw Calls
+5. **`DataMotes` (Ambient Energy Field)**:
+   - Floating stochastic energy motes exhibiting Brownian drift within a spherical bounding hull ($r = 1.8 R_0$).
+
+```
+                      ┌─────────────────────────────────────────┐
+                      │          NEURAL ORB ARCHITECTURE         │
+                      └─────────────────────────────────────────┘
+                                           │
+         ┌──────────────────┬──────────────┴─────┬──────────────────┐
+         ▼                  ▼                    ▼                  ▼
+┌──────────────────┐ ┌───────────────┐ ┌───────────────────┐ ┌───────────────┐
+│ Particle Lattice │ │ Synapse Lines │ │ Energy Core (PPM) │ │ Orbital Rings │
+│ (120k Points)    │ │ (10k Synapses)│ │ (Fusion Glow)     │ │ (Gimbal φ vel)│
+└──────────────────┘ └───────────────┘ └───────────────────┘ └───────────────┘
+```
+
+### 2.2 Procedural Modes
+
+The hologram transitions seamlessly between five operational modes via uniform weight interpolation ($\tau_{\text{blend}} = 0.42\text{s}$):
+
+| Mode | Shader Visual Behavior | Energy Baseline | Warmth | Spin Multiplier |
+|---|---|---|---|---|
+| **`NEURAL`** | High synapse connectivity, biological pulsing, cyan spectrum ($\lambda \approx 490\text{nm}$). | $0.35$ | $0.00$ | $1.0\times$ |
+| **`REACTOR`** | High-velocity rotational spin, compressed radius, golden fusion plasma. | $0.85$ | $0.85$ | $3.2\times$ |
+| **`DATA`** | Synapses dissolve into a structured point cloud matrix with periodic quantum motes. | $0.20$ | $0.15$ | $0.4\times$ |
+| **`ENERGY`** | Violent radial turbulence, expanded outer corona, high-frequency motes. | $0.95$ | $0.45$ | $2.0\times$ |
+| **`SCANNER`** | Concentrated radar arc plane sweeping $360^\circ$ with coordinate reticle locks. | $0.70$ | $0.10$ | $0.8\times$ |
+
+### 2.3 Real-time Visual Effects (VFX)
+
+- **`HolographicBeam`**: Volumetric dual-pass light funnels connecting active fingertip coordinates in 3D camera space directly to the orb center.
+- **`HandTrail`**: Ribbon-style particle emitter that trails fast hand gestures, featuring exponential alpha decay and velocity-aligned stretching.
+- **`ParticleBurst`**: Omnidirectional explosion of 320 high-velocity spark fragments triggered by fist release or AI command.
+- **`ScanArc`**: Truncated wedge mesh sweeping angular azimuths with trailing exponential phosphorescence decay.
+- **`OrbitalNodes`**: Interactive 3D celestial nodes circling the orb; support raycasted hover states and pinch-selection.
+- **`HandSkeleton`**: 3D cybernetic bones connecting all 21 MediaPipe hand landmarks in real-time camera space.
+- **`Reticle`**: Sci-fi targeting rings that track hand centroid coordinates with smooth lerp damping.
 
 ---
 
-## 3. Shaders and Mathematics
+## 3. Mathematical Foundations & Shader Formulations
 
-### 1. Icosahedral Geodesic Subdivision
-Particles and synapses originate from a recursively subdivided icosahedron, projected onto a unit sphere $S^2$:
-$$v_n = \frac{v_a + v_b}{\|v_a + v_b\|} \cdot R_0$$
-Yielding uniform spatial distribution without polar pinching.
+### 3.1 Geodesic Icosahedral Tessellation
+To eliminate pole-pinching artifacts inherent to UV spheres, vertices are constructed by recursively subdividing an icosahedron and normalizing to a unit sphere $S^2$:
+$$v_{\text{mid}} = \frac{v_1 + v_2}{\|v_1 + v_2\|_2} \cdot R_0$$
+This yields isotropic particle distribution where each vertex maintains an almost identical surface area element $dA$.
 
-### 2. Simplex Noise Radial Displacement
-Orb vertices are perturbed along surface normals in the vertex shader:
-$$P'(v, t) = P(v) + \vec{n} \cdot \left[ A_1 \mathcal{N}(P \cdot f_1 + \vec{\omega} t) + A_2 \mathcal{N}(P \cdot f_2 - 1.6 \vec{\omega} t) \right] \cdot \Phi_{\text{energy}}$$
+### 3.2 Dual-Octave Simplex Noise Normal Displacement
+In the custom vertex shader (`orb.vert.glsl`), particle vertices are displaced along their outward surface normals $\vec{n} = \frac{v}{\|v\|}$:
+$$P'(v, t) = v + \vec{n} \cdot \left[ A_1 \cdot \mathcal{N}\left(v \cdot f_1 + \vec{\omega}_1 t\right) + A_2 \cdot \mathcal{N}\left(v \cdot f_2 - 1.6 \vec{\omega}_1 t\right) \right] \cdot \Phi_{\text{energy}} \cdot \Psi_{\text{voice}}$$
+where:
+- $\mathcal{N}(x)$ is a 3D simplex noise function implemented in GLSL.
+- $\Phi_{\text{energy}} \in [0, 1]$ represents the state-driven energy uniform (`uEnergy`).
+- $\Psi_{\text{voice}} \in [1.0, 1.35]$ represents the speech amplitude multiplier.
 
-### 3. Volumetric Rayleigh Halo & Glow
-Post-processing pass computes radial distance attenuation and chromatic dispersion:
-$$I(r) = I_0 \cdot \exp\left(-\frac{r^2}{2 \sigma_{\text{bloom}}^2}\right) \cdot \left(1 + \kappa_{\text{warm}} \cdot \mathbf{C}_{\text{amber}}\right)$$
+### 3.3 Spherical Pulse Wavefront Propagation
+Shockwaves initiated by user gestures or tool calls propagate across the surface via an expanding spherical wavefront shell:
+$$\Delta r(v, t) = \|v - \vec{p}_{\text{origin}}\|_2 - c \cdot (t - t_{\text{start}})$$
+The pulse contribution to vertex intensity is evaluated as a Gaussian envelope:
+$$I_{\text{pulse}}(v) = \exp\left(-\frac{\Delta r(v, t)^2}{2 \sigma_{\text{width}}^2}\right) \cdot \exp\left(-\gamma \cdot (t - t_{\text{start}})\right)$$
+where $c$ is the wavefront velocity ($4.4\text{ units/s}$) and $\gamma$ is temporal decay.
+
+### 3.4 Multi-Harmonic Phonetic Voice Amplitude
+To drive authentic holographic rippling during speech without requiring cross-origin audio loopback nodes, voice output generates an analytical multi-harmonic phonetic envelope:
+$$A(t) = 0.5 + 0.3 \sin(0.7 \omega t) + 0.15 \sin(2.1 \omega t) + 0.1 \sin(4.3 \omega t)$$
+clamped to $A(t) \in [0.15, 1.0]$. The resulting envelope directly modulates `uEnergy` and `uBreath` uniforms in real time.
 
 ---
 
-## 4. Quick Start
+## 4. Computer Vision & Gesture Control
 
-### Prerequisites
-- **Node.js**: v20+ and `npm`
-- **Python**: v3.10+ (tested on Python 3.12 and 3.14)
-- **Modern Browser**: Chrome, Edge, Safari, or Firefox with WebGL enabled
+Optical gesture input is powered by **Google MediaPipe Tasks-Vision** executing in an isolated Web Worker, preventing camera inference from interrupting the Three.js 60 FPS rendering pipeline.
 
-### Installation
+```
+ Camera Stream (60fps) ──► OffscreenCanvas ──► Web Worker (MediaPipe Tasks-Vision)
+                                                       │
+                                              21 3D Landmarks
+                                                       ▼
+ Pointer Fallback (Mouse/Touch) ◄── [Failover] ── One Euro Filter (fc=1.2Hz, β=0.007)
+                                                       │
+                                           Gesture State Machine
+                                                       ▼
+                              [OPEN_PALM · PINCH · FIST · THUMBS_UP · SWIPE]
+```
+
+### 4.1 Supported Gestures & Action Mapping
+
+| Gesture | Biomechanical Trigger | Latency & Debounce | Interface / 3D Action |
+|---|---|---|---|
+| **`OPEN_PALM`** | All fingers extended ($d > 0.12$), palm facing camera. | $120\text{ms}$ debounce | Energizes core, triggers concentric pulses. |
+| **`PINCH`** | Distance between thumb tip and index tip $< 0.045$. | Instant edge trigger | Target acquisition, 3D spatial rotation, node selection. |
+| **`FIST`** | All fingertips contracted inside palm bounding radius. | Instant edge trigger | Compresses orb scale; releases explosive power surge on release. |
+| **`THUMBS_UP`** | Thumb vertical ($\Delta y > 0.08$), all fingers curled into palm. | $150\text{ms}$ debounce | Affirms choices, confirms pending actions. |
+| **`SWIPE`** | Rapid lateral hand translation ($\|v_x\| > 1.2\text{ units/s}$). | $350\text{ms}$ cooldown | Cycles forward/backward through procedural modes. |
+
+### 4.2 One Euro Temporal Filtering
+To eliminate optical hand tremor while preserving zero-lag response during rapid motions, coordinates pass through adaptive One Euro filters:
+$$f_c = f_{c,\min} + \beta \cdot \|\dot{x}\|$$
+$$\alpha = \frac{1}{1 + \frac{1}{2 \pi f_c \Delta t}}$$
+$$x_{\text{filtered}} = \alpha \cdot x + (1 - \alpha) \cdot x_{\text{prev}}$$
+with $f_{c,\min} = 1.2\text{ Hz}$ and $\beta = 0.007$.
+
+---
+
+## 5. AI Companion Brain & Streaming Backend
+
+The backend is built with **Python 3.12+ and FastAPI**, providing production-grade Server-Sent Events (SSE) streaming, asynchronous concurrency, strict Pydantic data validation, and an allowlisted command execution engine.
+
+### 5.1 Multi-Provider Gateway
+
+The backend dynamically selects between four LLM execution modes configured via `.env`:
+
+1. **Anthropic Claude**: Connects via official Anthropic REST streaming API (`claude-3-5-sonnet-20241022`).
+2. **OpenAI**: Connects to OpenAI v1 completions streaming API (`gpt-4o-mini`, `gpt-4o`).
+3. **Ollama (Local LLM)**: Connects to local Ollama daemon (`llama3.2`, `mistral`) for 100% offline edge inference.
+4. **Intelligent Offline Mock Assistant**: Zero-setup, standalone companion that answers technical queries, inspects system telemetry, and triggers valid tool calls without an API key or internet access.
+
+### 5.2 Server-Sent Events (SSE) Protocol
+
+Streaming tokens and actions are dispatched through `POST /api/chat`:
+- `data: {"type": "token", "content": "Hello"}` — Emitted as individual tokens are generated.
+- `data: {"type": "tool_call", "name": "change_orb_mode", "arguments": {"mode": "REACTOR"}}` — Dispatched when the LLM invokes an interface action.
+- `data: {"type": "citation", "citations": [...]}` — Dispatched when answers are grounded in uploaded documents.
+- `data: {"type": "done", "full_text": "...", "ttft_ms": 210.4, "total_ms": 840.1}` — Terminal frame containing latency benchmarks.
+
+---
+
+## 6. Central Command Registry & Tool Calling
+
+To ensure security and prevent arbitrary code execution, the LLM is restricted to a strictly bounded **Central Command Registry**. Every tool call generated by the model must match an allowlisted JSON Schema:
+
+```
+LLM Output ──► JSON Schema Validator ──► Allowlist Check ──► CommandExecutor ──► 3D Scene
+                      │ (Invalid)
+                      └──► Rejected (No Action Taken)
+```
+
+### Registered Tools
+
+```json
+[
+  {
+    "name": "change_orb_mode",
+    "description": "Morphs the 3D hologram into one of the procedural configurations",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["NEURAL", "REACTOR", "DATA", "ENERGY", "SCANNER"] }
+      },
+      "required": ["mode"]
+    }
+  },
+  {
+    "name": "fire_pulse",
+    "description": "Dispatches a high-energy spherical wavefront through the holographic lattice",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "intensity": { "type": "number", "minimum": 0.1, "maximum": 3.0 }
+      }
+    }
+  },
+  {
+    "name": "trigger_burst",
+    "description": "Ejects a high-velocity particle shockwave from the core",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "warm": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    }
+  },
+  {
+    "name": "set_orb_scale",
+    "description": "Scales the physical footprint of the 3D hologram",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "scale": { "type": "number", "minimum": 0.6, "maximum": 1.8 }
+      },
+      "required": ["scale"]
+    }
+  },
+  {
+    "name": "set_warmth",
+    "description": "Shifts holographic spectrum from cold cyan (0.0) to warm golden amber (1.0)",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "warmth": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      },
+      "required": ["warmth"]
+    }
+  },
+  {
+    "name": "open_panel",
+    "description": "Opens or toggles aerospace HUD panels",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "panel": { "type": "string", "enum": ["chat", "diagnostics", "knowledge"] }
+      },
+      "required": ["panel"]
+    }
+  },
+  {
+    "name": "reset_system",
+    "description": "Resets hologram scale, orientation, camera rig, and restores NEURAL mode"
+  }
+]
+```
+
+---
+
+## 7. Voice Interaction & Phonetic Waveforms
+
+- **Hands-Free Web Speech STT**: Continuous or push-to-talk speech recognition with live interim feedback displayed directly inside the chat bar.
+- **Natural Web Speech TTS**: Reads AI responses aloud with automatic markdown stripping and voice selection (prefers Samantha, Daniel, or Google Natural voices).
+- **Phonetic Cadence Simulation**: Computes multi-harmonic envelopes to dynamically ripple the 3D hologram surface during speech playback.
+- **Privacy First**: Audio is processed entirely through browser APIs; no microphone audio bytes are ever sent to the backend server.
+
+---
+
+## 8. Document Knowledge Vault (RAG)
+
+The Document Knowledge Vault allows users to ground AI conversations in local reference documents:
+
+- **Supported Formats**: `.txt`, `.pdf`, `.md`, `.json` up to **10 MB**.
+- **Text Extraction**: Uses `pypdf` for clean multi-page PDF text extraction.
+- **Recursive Chunking**: Splits text into 400-character windows with 60-character sliding overlaps to maintain semantic cohesion.
+- **TF-IDF Cosine Retrieval**: Evaluates query vectors against document chunk term-frequency matrices without external vector database dependencies:
+  $$\text{sim}(Q, D_i) = \frac{\vec{q} \cdot \vec{d}_i}{\|\vec{q}\|_2 \|\vec{d}_i\|_2}$$
+- **Source Grounding & Citations**: Retrieved passages are injected into the LLM context prompt; answers render interactive citation pills (`[manual.pdf #Chunk 3]`).
+- **Insufficient Evidence Indication**: If document similarity falls below confidence thresholds, the system explicitly reports that the knowledge vault lacks relevant evidence rather than hallucinating.
+
+---
+
+## 9. Aerospace HUD & Diagnostics Telemetry
+
+The user interface follows a strict aerospace instrumentation aesthetic: thin rules, monospace telemetry fonts, and cyan/ice illumination.
+
+### Panels
+1. **AI Neural Transcript (`T`)**: Streaming conversation history, tool action pills, citation tags, voice mic toggle, and clear controls.
+2. **Diagnostics Telemetry (`X`)**: Real-time performance readouts.
+3. **Document Knowledge Vault (`K`)**: Drag-and-drop file upload zone, indexed document lists, chunk counts, and vault purge controls.
+
+### Verified Runtime Metrics (No Fabricated Telemetry)
+- **Render FPS & Frame Time**: Real measured WebGL animation frame interval ($\text{ms}$).
+- **Optical Gesture Latency**: Execution time of MediaPipe inference worker ($\text{ms}$).
+- **Inference Rate**: Frequency of landmark processing ($\text{Hz}$).
+- **AI Time to First Token (TTFT)**: Elapsed time from prompt submission to first streamed SSE byte ($\text{ms}$).
+- **Total AI Duration**: End-to-end response completion time ($\text{ms}$).
+- **Active Particles & GPU Draw Calls**: Hardware counters read from `renderer.info`.
+
+---
+
+## 10. Repository Directory Structure
+
+```
+ULTIMAITRON-UI-main/
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions CI (Typecheck, Build, Pytest)
+├── backend/
+│   ├── app/                   # Compatibility backend modules
+│   ├── routers/
+│   │   ├── chat.py            # SSE chat streaming router
+│   │   ├── documents.py       # RAG document upload and retrieval router
+│   │   └── system.py          # Health check & commands router
+│   ├── services/
+│   │   ├── command_registry.py# Safe allowlisted tool registry
+│   │   ├── llm_service.py     # Claude / OpenAI / Ollama / Mock adapters
+│   │   └── rag_service.py     # Chunking & TF-IDF cosine retrieval
+│   ├── tests/
+│   │   └── test_api.py        # Backend router tests
+│   ├── config.py              # Backend environment configuration
+│   ├── Dockerfile             # Python FastAPI container build
+│   ├── main.py                # FastAPI application entrypoint
+│   ├── requirements.txt       # Python dependencies
+│   └── schemas.py             # Pydantic models
+├── deploy/
+│   └── nginx.conf             # Production reverse proxy (SSE unbuffered)
+├── src/
+│   ├── ai/                    # Frontend AI Companion Layer
+│   │   ├── AIClient.ts        # SSE reader with TTFT & latency tracking
+│   │   ├── AIStateManager.ts  # Holographic state machine & profiles
+│   │   ├── CommandExecutor.ts # Safe dispatcher for tool calls
+│   │   ├── VoiceAssistant.ts  # Web Speech STT/TTS & phonetic amplitude
+│   │   └── types.ts           # Shared AI types & event interfaces
+│   ├── audio/                 # Procedural Web Audio synthesizer
+│   ├── effects/               # Procedural 3D Visual Effects
+│   │   ├── HandSkeleton.ts    # 3D Cybernetic bone visualization
+│   │   ├── HandTrail.ts       # Velocity-aligned particle ribbons
+│   │   ├── HolographicBeam.ts # Volumetric fingertip tractor beams
+│   │   ├── OrbitalNodes.ts    # Interactive celestial data nodes
+│   │   ├── ParticleBurst.ts   # Omnidirectional shockwave explosion
+│   │   ├── Reticle.ts         # Holographic targeting reticle
+│   │   └── ScanArc.ts         # Directional sweeping radar arc
+│   ├── interaction/           # Input smoothing, mapping & gestures
+│   ├── orb/                   # Neural Orb geometry & shader management
+│   ├── scene/                 # Camera rig, renderer factory & post-processing
+│   ├── shaders/               # Custom GLSL vertex & fragment shaders
+│   ├── ui/                    # Aerospace HUD & telemetry panels
+│   │   ├── ChatPanel.ts       # Streaming AI transcript interface
+│   │   ├── DiagnosticsPanel.ts# Real-time telemetry dashboard
+│   │   ├── KnowledgePanel.ts  # Document upload & chunk management
+│   │   └── styles.css         # Aerospace HUD stylesheet
+│   ├── vision/                # MediaPipe Tasks-Vision hand tracker
+│   ├── config.ts              # Central configuration & tunable constants
+│   └── main.ts                # Application lifecycle bootstrap
+├── tests/
+│   └── test_backend.py        # Comprehensive backend test suite
+├── docker-compose.yml         # Containerized multi-service deployment
+├── Dockerfile                 # Frontend multi-stage Nginx build
+├── package.json               # Node.js dependencies & scripts
+├── pytest.ini                 # Pytest configuration
+├── tsconfig.json              # Strict TypeScript configuration
+└── vite.config.ts             # Vite development & proxy configuration
+```
+
+---
+
+## 11. Quick Start & Local Setup
+
+### 11.1 Prerequisites
+- **Node.js**: v20.0 or higher
+- **Python**: v3.10 to v3.14
+- **Web Browser**: Modern browser with WebGL hardware acceleration enabled
+
+### 11.2 Installation
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/kasanagottusathvik/ULTIMAITRON-UI.git
-cd ULTIMAITRON-UI-main
+git clone https://github.com/sathvikkasanagpttu/ultimaitron-ai.git
+cd ultimaitron-ai
 
-# 2. Setup Frontend
+# 2. Setup Node.js frontend dependencies
 npm ci
 
-# 3. Setup Python Backend
+# 3. Setup Python virtual environment & backend dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
 
-# 4. Configure Environment
+# 4. Configure environment variables
 cp .env.example .env
-# Edit .env to set LLM_PROVIDER ('mock', 'anthropic', 'openai', or 'ollama')
 ```
 
-### Running the Application
+### 11.3 Running the Application
 
-In **Terminal 1** (Backend):
+Open two terminal sessions:
+
+**Terminal 1 — FastAPI Backend**:
 ```bash
 source .venv/bin/activate
 uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-In **Terminal 2** (Frontend):
+**Terminal 2 — Vite Frontend**:
 ```bash
 npm run dev
 ```
 
-Open **`http://localhost:5173`** in your browser. The Vite dev server automatically proxies `/api` requests to `http://127.0.0.1:8000`.
+Open your browser at **`http://localhost:5173`**. The Vite development server automatically proxies `/api` calls to `http://127.0.0.1:8000`.
 
 ---
 
-## 5. Running with Docker Compose
+## 12. Docker Deployment
 
-To deploy both frontend (Nginx production bundle) and backend (FastAPI Uvicorn) in containerized isolation:
+Deploy the entire stack with a single command using Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-Access the complete UI at **`http://localhost:8080`**.
+- **Frontend**: Nginx serves the optimized production bundle at **`http://localhost:8080`**.
+- **Backend**: FastAPI runs with Uvicorn on port `8000` (proxied internally through Nginx under `/api/`).
+- **SSE Buffering**: `deploy/nginx.conf` is configured with `proxy_buffering off` to guarantee zero-latency token streaming.
 
 ---
 
-## 6. Testing & Quality Verification
+## 13. Verification & Test Suites
+
+The project maintains strict continuous verification across TypeScript and Python:
 
 ```bash
-# Frontend TypeScript check
+# 1. TypeScript Strict Typecheck (0 errors)
 npm run typecheck
 
-# Frontend Production Build
+# 2. Production Vite Build
 npm run build
 
-# Backend Pytest Suite (All 16 tests: SSE stream, tool calling, security, RAG, health)
-.venv/bin/pytest
+# 3. Comprehensive Pytest Suite (All 16 tests passing)
+.venv/bin/pytest -v
 ```
 
 ---
 
-## 7. Keyboard & Gesture Controls
+## 14. Keyboard & Gesture Reference
 
-| Key | Action |
-|---|---|
-| `1` – `5` | Switch Orb Mode (`NEURAL`, `REACTOR`, `DATA`, `ENERGY`, `SCANNER`) |
-| `T` | Toggle AI Neural Transcript Panel |
-| `V` | Toggle Voice Recognition (STT Push-To-Talk) |
-| `X` | Toggle Real-time Diagnostics Telemetry |
-| `K` | Toggle Document Knowledge Vault |
-| `G` | Toggle Optical Camera Tracking |
-| `Space` | Fire Manual Power Surge Pulse |
-| `R` | Reset System Orientation and Core Coordinates |
-| `H` | Toggle HUD Interface Elements |
-| `D` | Toggle Debug Landmarking Preview |
-| `Esc` | Close Active Modal Panels / Dismiss Notices |
+### Keyboard Shortcuts
+
+| Key | Action | Description |
+|---|---|---|
+| `1` – `5` | Switch Orb Mode | `1: NEURAL`, `2: REACTOR`, `3: DATA`, `4: ENERGY`, `5: SCANNER` |
+| `T` | Toggle AI Chat | Opens/minimizes the AI transcript panel |
+| `V` | Toggle Voice | Starts or stops hands-free speech recognition (STT) |
+| `X` | Toggle Diagnostics | Shows/hides the real-time telemetry dashboard |
+| `K` | Knowledge Vault | Opens/closes document upload & management |
+| `G` | Toggle Camera | Starts or stops the optical MediaPipe hand tracker |
+| `Space` | Energy Pulse | Fires an omnidirectional power surge wavefront |
+| `R` | Reset System | Re-centers camera distance and restores NEURAL configuration |
+| `H` | Toggle HUD | Hides/reveals all overlay interface elements |
+| `D` | Debug Mode | Shows/hides 3D skeletal landmark overlays and video feed |
+| `Esc` | Close Modals | Closes open panels and dismisses active notifications |
+
+### Optical Hand Gestures
+
+| Gesture Icon | Gesture | System Effect |
+|---|---|---|
+| 🖐️ | **Open Palm** | Accelerates particle spin and fires concentric ripple waves |
+| 🤏 | **Pinch & Drag** | Acquires target coordinates; rotates the orb in 3D space |
+| ✊ | **Fist Hold & Release**| Compresses lattice radius; detonates an omnidirectional particle burst on release |
+| 👍 | **Thumbs Up** | Confirms choices; triggers affirmative companion sound and pulse |
+| 👋 | **Lateral Swipe** | Morphs sequentially between the 5 procedural modes |
 
 ---
 
-## 8. License
+## 15. Limitations & Design Trade-offs
 
-MIT License. Crafted for creative technologist experimentation, real-time graphics research, and next-generation human-AI interaction.
+1. **Local Audio Loopback**: Browsers restrict programmatic audio capturing of `SpeechSynthesisUtterance` into Web Audio `AnalyserNode` instances without insecure permissions. ULTIMAITRON AI 2.0 solves this cleanly by synthesizing a multi-harmonic phonetic envelope ($A(t)$) that drives identical visual ripples across all browsers.
+2. **Scanned PDF OCR**: Document knowledge retrieval supports digital text-based PDF, TXT, MD, and JSON files. Scanned image-only PDFs require an external OCR pre-processing step.
+3. **In-Memory Rate Limiter**: The built-in rate limiter operates in process memory for lightweight single-node deployments. High-availability multi-node deployments should connect to a Redis-backed token bucket.
+
+---
+
+## 16. License
+
+This project is licensed under the **MIT License**.  
+Crafted for creative technology experimentation, real-time computer vision research, and next-generation human-AI interaction.
