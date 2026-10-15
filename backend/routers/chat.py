@@ -1,13 +1,17 @@
+import time
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from backend.schemas import ChatRequest, ChatMessage
+from backend.config import settings
+from backend.schemas import ChatMessage
 from backend.services.llm_service import stream_chat_response
-from typing import List, Dict, Any
+from backend.services.rag_service import rag_store
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 # In-memory session history
 _conversation_history: List[ChatMessage] = []
+
 
 @router.post("", include_in_schema=True)
 @router.post("/", include_in_schema=False)
@@ -17,7 +21,7 @@ async def chat_stream(request: Request):
     Server-Sent Events endpoint streaming AI tokens, tool calls, and states.
     Accepts both:
     1. ULTIMAITRON 2.0 schema: {"message": "...", "history": [...]}
-    2. Legacy schema: {"messages": [{"role": "user", "content": "..."}]}
+    2. Legacy schema: {"messages": [{"role": "user", "content": "..."}], "document_ids": [...]}
     """
     try:
         body = await request.json()
@@ -26,6 +30,7 @@ async def chat_stream(request: Request):
 
     message_text = ""
     history_list: List[ChatMessage] = []
+    document_ids: List[str] = body.get("document_ids", [])
 
     if "message" in body:
         message_text = str(body["message"]).strip()
@@ -44,6 +49,17 @@ async def chat_stream(request: Request):
 
     if not message_text:
         raise HTTPException(status_code=422, detail="Message cannot be blank.")
+
+    # If document_ids were explicitly passed, verify they exist
+    if document_ids and not rag_store.contains(document_ids):
+        raise HTTPException(status_code=410, detail="An uploaded document expired after a backend restart. Upload it again to continue.")
+
+    # Check provider configuration if external provider is explicitly configured
+    active_prov = (body.get("provider") or settings.LLM_PROVIDER or "").lower()
+    if active_prov == "anthropic" and not settings.ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=503, detail="Anthropic API key is not configured. Set ANTHROPIC_API_KEY on the backend.")
+    elif active_prov == "openai" and not settings.OPENAI_API_KEY:
+        raise HTTPException(status_code=503, detail="OpenAI API key is not configured. Set OPENAI_API_KEY or LLM_API_KEY on the backend.")
 
     user_msg = ChatMessage(role="user", content=message_text)
     _conversation_history.append(user_msg)
@@ -64,7 +80,8 @@ async def chat_stream(request: Request):
             provider=provider,
             model=model,
             temperature=temperature,
-            system_prompt=system_prompt
+            system_prompt=system_prompt,
+            document_ids=document_ids
         ):
             yield chunk
 
@@ -78,9 +95,11 @@ async def chat_stream(request: Request):
         }
     )
 
+
 @router.get("/history")
 async def get_history():
     return {"history": _conversation_history}
+
 
 @router.post("/clear")
 async def clear_history():
