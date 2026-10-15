@@ -274,6 +274,8 @@ export class HandInteraction {
         return 0.98;
       case 'FIST':
         return 0.88;
+      case 'THUMBS_UP':
+        return 0.75;
       case 'PINCHING':
         return 0.72;
       case 'POINTING':

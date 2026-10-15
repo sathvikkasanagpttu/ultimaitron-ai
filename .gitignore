@@ -5,3 +5,7 @@ dev/shots/
 *.log
 .DS_Store
 .vite/
+.env
+.venv/
+__pycache__/
+.pytest_cache/

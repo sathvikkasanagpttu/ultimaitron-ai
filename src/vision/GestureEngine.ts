@@ -9,6 +9,7 @@ export type HandGesture =
   | 'POINT'
   | 'PINCH'
   | 'FIST'
+  | 'THUMBS_UP'
   | 'OPEN_PALM'
   | 'TWO_FINGER'
   | 'THREE_FINGER'
@@ -20,6 +21,7 @@ export const GESTURE_LABEL: Record<HandGesture, string> = {
   POINT: 'POINT',
   PINCH: 'PINCH',
   FIST: 'FIST',
+  THUMBS_UP: 'THUMBS UP (CONFIRM)',
   OPEN_PALM: 'OPEN PALM',
   TWO_FINGER: 'NAVIGATION',
   THREE_FINGER: 'SYSTEM ANALYSIS',
@@ -259,6 +261,15 @@ export class GestureEngine {
     // signal on a hand, and every gesture below is separable without it.
     const fingersOut =
       (indexOut ? 1 : 0) + (middleOut ? 1 : 0) + (ringOut ? 1 : 0) + (pinkyOut ? 1 : 0);
+
+    // Thumbs-up: 4 fingers curled, thumb extended and pointing upward relative to the wrist
+    if (fingersOut === 0 && f.extended[0] && f.landmarks.length >= 21) {
+      const wrist = f.landmarks[0];
+      const thumbTip = f.landmarks[4];
+      if (thumbTip.y < wrist.y - 0.05) {
+        return 'THUMBS_UP';
+      }
+    }
 
     // A closed hand is checked first and requires *every* finger folded, so a
     // pointing or pinching hand can never be mistaken for a fist — and the

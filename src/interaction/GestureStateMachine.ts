@@ -10,6 +10,7 @@ export type SystemGesture =
   | 'PINCHING'
   | 'OPEN_PALM'
   | 'FIST'
+  | 'THUMBS_UP'
   | 'TWO_HAND'
   | 'SWIPE';
 
@@ -20,6 +21,7 @@ export const SYSTEM_GESTURE_LABEL: Record<SystemGesture, string> = {
   PINCHING: 'PINCH DETECTED',
   OPEN_PALM: 'SYSTEM ACTIVE',
   FIST: 'POWER SURGE',
+  THUMBS_UP: 'CONFIRMED (THUMBS UP)',
   TWO_HAND: 'DUAL CONTROL',
   SWIPE: 'MODE SHIFT',
 };
@@ -113,6 +115,8 @@ export class GestureStateMachine {
         return 'POINTING';
       case 'OPEN_PALM':
         return 'OPEN_PALM';
+      case 'THUMBS_UP':
+        return 'THUMBS_UP';
       default:
         return 'HAND_DETECTED';
     }

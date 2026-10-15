@@ -34,6 +34,14 @@ import { HUD } from './ui/HUD';
 import { BootSequence } from './ui/BootSequence';
 import { AudioEngine } from './audio/AudioEngine';
 
+import { AIStateManager } from './ai/AIStateManager';
+import { AIClient } from './ai/AIClient';
+import { VoiceAssistant } from './ai/VoiceAssistant';
+import { CommandExecutor } from './ai/CommandExecutor';
+import { ChatPanel } from './ui/ChatPanel';
+import { DiagnosticsPanel } from './ui/DiagnosticsPanel';
+import { KnowledgePanel } from './ui/KnowledgePanel';
+
 const WARM_MODE_SECONDS = 2.4;
 
 class Application {
@@ -63,6 +71,19 @@ class Application {
   private readonly hud: HUD;
   private readonly boot: BootSequence;
   private readonly audio = new AudioEngine();
+
+  // Modern AI Companion Infrastructure
+  private readonly aiState = new AIStateManager();
+  private readonly aiClient = new AIClient();
+  private readonly voice = new VoiceAssistant();
+  private readonly executor: CommandExecutor;
+
+  private readonly chatPanel: ChatPanel;
+  private readonly diagnosticsPanel: DiagnosticsPanel;
+  private readonly knowledgePanel: KnowledgePanel;
+
+  private backendConnected = false;
+  private errorsCount = 0;
 
   private lastFrameTime = 0;
   private pixelRatio: number;
@@ -136,6 +157,60 @@ class Application {
     this.hud = new HUD(ui);
     this.boot = new BootSequence(ui, this.reducedMotion);
 
+    // AI Companion UI panels
+    this.chatPanel = new ChatPanel(ui, {
+      onSendMessage: (text) => void this.handleUserMessage(text),
+      onToggleVoice: () => void this.toggleVoice(),
+      onClearChat: () => {
+        this.aiClient.clear();
+        this.hud.gestures.toast('CONVERSATION CLEARED');
+      },
+    });
+
+    this.diagnosticsPanel = new DiagnosticsPanel(ui);
+    this.knowledgePanel = new KnowledgePanel(ui);
+
+    // Central safe Command Registry executor
+    this.executor = new CommandExecutor({
+      setMode: (mode) => {
+        this.orb.setMode(mode);
+        this.changeMode(mode);
+      },
+      firePulse: (_intensity) => {
+        this.orb.firePulse();
+        this.audio.play('power');
+      },
+      triggerBurst: (warm) => {
+        this.orb.triggerBurst();
+        this.burst.fire(
+          this.orb.group.position,
+          ORB.radius * 0.4 * this.orb.currentScale,
+          Math.round(320 * (this.tier === 'LOW' ? 0.5 : 1)),
+          4.4,
+          warm ?? 0,
+        );
+        this.audio.play('power');
+      },
+      setScale: (scale) => {
+        this.orb.setScaleTarget(scale);
+      },
+      setWarmth: (warmth) => {
+        this.orb.setWarmTarget(warmth);
+      },
+      resetSystem: () => {
+        this.orb.resetOrientation();
+        this.interaction.reset();
+        this.scene.rig.setDistance(6.2);
+        this.changeMode('NEURAL');
+      },
+      openPanel: (panel) => {
+        if (panel === 'chat') this.chatPanel.setOpen(true);
+        else if (panel === 'diagnostics') this.diagnosticsPanel.setOpen(true);
+        else if (panel === 'knowledge') this.knowledgePanel.setOpen(true);
+      },
+    });
+
+    this.setupAISystem();
     this.applyAccessibility();
     this.registerControls(initialAudio);
     this.registerEvents();
@@ -172,10 +247,152 @@ class Application {
   }
 
   /* ------------------------------------------------------------------ */
+  /* AI & voice initialization                                          */
+  /* ------------------------------------------------------------------ */
+
+  private setupAISystem(): void {
+    void this.checkBackend();
+
+    // AI state machine drives the holographic core shader parameters
+    this.aiState.events.on('change', ({ to }) => {
+      const profile = this.aiState.profile;
+      this.orb.setEnergyTarget(profile.energyTarget);
+      this.orb.setWarmTarget(profile.warmthTarget);
+      this.post.setAlert(profile.alert);
+      this.orb.firePulse();
+
+      this.chatPanel.setState(to, to === 'ERROR' ? 'warn' : to === 'IDLE' ? 'normal' : 'active');
+      this.hud.gestures.toast(`AI CORE · ${to}`);
+    });
+
+    // AI Client SSE event handling
+    this.aiClient.events.on('token', (token) => {
+      this.chatPanel.appendToken(token);
+    });
+
+    this.aiClient.events.on('toolCall', (call) => {
+      this.chatPanel.appendToolCall(call);
+      const res = this.executor.execute(call);
+      this.hud.gestures.toast(res.message, res.success ? 'normal' : 'warn');
+    });
+
+    this.aiClient.events.on('citation', (citations) => {
+      this.chatPanel.appendCitations(citations);
+    });
+
+    this.aiClient.events.on('done', ({ fullText }) => {
+      this.chatPanel.endStream();
+      if (!this.voice.isMuted) {
+        this.voice.speak(fullText);
+      } else {
+        this.aiState.setState('IDLE');
+      }
+    });
+
+    this.aiClient.events.on('error', (err) => {
+      this.chatPanel.appendError(err);
+      this.aiState.setState('ERROR');
+      this.errorsCount++;
+      this.hud.gestures.toast(err.slice(0, 50), 'warn');
+    });
+
+    // Voice recognition & synthesis events
+    this.voice.events.on('listeningStart', () => {
+      this.aiState.setState('LISTENING');
+      this.chatPanel.setMicActive(true);
+      this.hud.status.setControlState('voice', 'LISTENING', true);
+      this.hud.gestures.toast('LISTENING FOR SPEECH...');
+    });
+
+    this.voice.events.on('listeningEnd', () => {
+      if (this.aiState.state === 'LISTENING') {
+        this.aiState.setState('IDLE');
+      }
+      this.chatPanel.setMicActive(false);
+      this.hud.status.setControlState('voice', 'OFF', false);
+    });
+
+    this.voice.events.on('transcript', ({ text, isFinal }) => {
+      if (isFinal) {
+        this.chatPanel.setInputValue('');
+        void this.handleUserMessage(text);
+      } else {
+        this.chatPanel.setInputValue(text);
+      }
+    });
+
+    this.voice.events.on('speakingStart', () => {
+      this.aiState.setState('SPEAKING');
+    });
+
+    this.voice.events.on('speakingEnd', () => {
+      if (this.aiState.state === 'SPEAKING') {
+        this.aiState.setState('IDLE');
+      }
+    });
+
+    this.voice.events.on('error', (err) => {
+      this.hud.gestures.toast(err, 'warn');
+    });
+  }
+
+  private async checkBackend(): Promise<void> {
+    try {
+      const res = await fetch('/api/health');
+      if (res.ok) {
+        const data = await res.json();
+        this.backendConnected = data.status === 'ok';
+      } else {
+        this.backendConnected = false;
+      }
+    } catch {
+      this.backendConnected = false;
+    }
+  }
+
+  private async handleUserMessage(text: string): Promise<void> {
+    if (!text.trim()) return;
+    this.chatPanel.setOpen(true);
+    this.aiState.setState('THINKING');
+    this.chatPanel.beginStream();
+    await this.aiClient.sendMessage(text);
+  }
+
+  private toggleVoice(): void {
+    const active = this.voice.toggleListening();
+    this.hud.status.setControlState('voice', active ? 'LISTENING' : 'OFF', active);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* wiring                                                              */
   /* ------------------------------------------------------------------ */
 
   private registerControls(initialAudio: boolean): void {
+    this.hud.status.addControl(
+      { id: 'chat', label: 'AI CHAT', initialState: 'OFF' },
+      () => {
+        const open = this.chatPanel.toggle();
+        this.hud.status.setControlState('chat', open ? 'OPEN' : 'OFF', open);
+      },
+    );
+    this.hud.status.addControl(
+      { id: 'voice', label: 'VOICE STT/TTS', initialState: 'OFF' },
+      () => this.toggleVoice(),
+    );
+    this.hud.status.addControl(
+      { id: 'diagnostics', label: 'DIAGNOSTICS', initialState: 'OFF' },
+      () => {
+        const open = this.diagnosticsPanel.toggle();
+        this.hud.status.setControlState('diagnostics', open ? 'ON' : 'OFF', open);
+      },
+    );
+    this.hud.status.addControl(
+      { id: 'vault', label: 'KNOWLEDGE VAULT', initialState: 'OFF' },
+      () => {
+        const open = this.knowledgePanel.toggle();
+        this.hud.status.setControlState('vault', open ? 'OPEN' : 'OFF', open);
+      },
+    );
     this.hud.status.addControl(
       { id: 'camera', label: 'CAMERA', initialState: 'OFF' },
       () => void this.toggleCamera(),
@@ -267,6 +484,11 @@ class Application {
       this.hud.gestures.toast(SYSTEM_GESTURE_LABEL[to]);
       if (to === 'HAND_DETECTED') this.audio.play('handDetected');
       if (to === 'OPEN_PALM') this.orb.firePulse();
+      if (to === 'THUMBS_UP') {
+        this.audio.play('select');
+        this.orb.firePulse();
+        this.hud.gestures.toast('ACTION CONFIRMED', 'normal');
+      }
     });
 
     this.gestures.events.on('pinchStart', () => {
@@ -439,6 +661,18 @@ class Application {
       case 'g':
         void this.toggleCamera();
         break;
+      case 't':
+        this.chatPanel.toggle();
+        break;
+      case 'v':
+        this.toggleVoice();
+        break;
+      case 'x':
+        this.diagnosticsPanel.toggle();
+        break;
+      case 'k':
+        this.knowledgePanel.toggle();
+        break;
       case ' ':
         event.preventDefault();
         this.orb.firePulse();
@@ -462,11 +696,11 @@ class Application {
         this.hud.status.setControlState('hud', visible ? 'ON' : 'OFF', visible);
         break;
       }
-      case 'c':
-        this.toggleDebug();
-        break;
       case 'escape':
         this.hud.status.hideNotice();
+        this.chatPanel.setOpen(false);
+        this.diagnosticsPanel.setOpen(false);
+        this.knowledgePanel.setOpen(false);
         break;
       default:
         break;
@@ -474,10 +708,8 @@ class Application {
   };
 
   private readonly onVisibilityChange = (): void => {
-    // Pause the loop when hidden: a background tab has no business burning GPU.
     this.running = !document.hidden;
     if (this.running) {
-      // Discard the time spent hidden so the orb does not jump on return.
       this.lastFrameTime = performance.now();
       this.loop();
     }
@@ -492,7 +724,7 @@ class Application {
   };
 
   /* ------------------------------------------------------------------ */
-  /* frame                                                               */
+  /* frame loop                                                          */
   /* ------------------------------------------------------------------ */
 
   private readonly loop = (): void => {
@@ -500,12 +732,8 @@ class Application {
     this.frameHandle = requestAnimationFrame(this.loop);
 
     const now = performance.now();
-    // Composer runs several passes per frame; accumulate their stats manually.
     this.renderer.info.reset();
 
-    // The simulation step is clamped so a stall cannot teleport the orb, but
-    // the performance monitor must see the real frame time or it would report
-    // a healthy 20fps while the page is actually crawling.
     const rawDt = (now - this.lastFrameTime) / 1000;
     const dt = Math.min(0.05, rawDt);
     this.lastFrameTime = now;
@@ -513,6 +741,13 @@ class Application {
 
     this.performance.update(rawDt);
     this.boot.update(dt);
+    this.aiState.update(dt);
+
+    // Phonetic voice cadence drives orb surface ripple
+    const voiceAmp = this.voice.update(dt);
+    if (this.voice.isSpeaking && voiceAmp > 0) {
+      this.orb.setEnergyTarget(Math.min(1.0, 0.72 + voiceAmp * 0.28));
+    }
 
     /* --- input --------------------------------------------------------- */
     this.tracker.update(now);
@@ -608,6 +843,25 @@ class Application {
       energyLabel: activation > 0.85 ? 'SURGE' : activation > 0.5 ? 'ELEVATED' : 'NOMINAL',
     });
 
+    // Update real diagnostics panel metrics (zero allocation, only updates open panel)
+    this.diagnosticsPanel.update({
+      fps: this.performance.fps,
+      frameTimeMs: this.performance.frameTimeMs,
+      gestureLatencyMs: usingCamera ? this.tracker.lastInferenceMs : 0,
+      inferenceFps: this.performance.inferenceFps,
+      ttftMs: this.aiClient.ttftMs,
+      aiResponseMs: this.aiClient.totalMs,
+      aiState: this.aiState.state,
+      cameraState: cameraLabel,
+      micState: this.voice.isListening ? 'LISTENING' : this.voice.isSpeaking ? 'SPEAKING' : 'STANDBY',
+      backendConnected: this.backendConnected,
+      qualityTier: this.tier,
+      particles: this.orb.stats.particles,
+      connections: this.orb.stats.connections,
+      drawCalls: this.renderer.info.render.calls,
+      errorsCount: this.errorsCount,
+    });
+
     if (this.hud.debug.isOpen) {
       const info = this.renderer.info;
       this.hud.debug.update({
@@ -630,9 +884,14 @@ class Application {
         programs: info.programs?.length ?? 0,
         pixelRatio: this.pixelRatio,
       });
+      this.hud.debug.updateAssistant({
+        assistantState: this.aiState.state,
+        backend: this.backendConnected ? 'ONLINE' : 'OFFLINE',
+        aiResponseMs: this.aiClient.totalMs > 0 ? `${this.aiClient.totalMs.toFixed(0)}ms` : '—',
+        firstTokenMs: this.aiClient.ttftMs > 0 ? `${this.aiClient.ttftMs.toFixed(0)}ms` : '—',
+      });
       this.hud.debug.drawLandmarks([hands[0].landmarks, hands[1].landmarks]);
     }
-
   }
 
   dispose(): void {
@@ -643,6 +902,8 @@ class Application {
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
 
     this.tracker.dispose();
+    this.voice.dispose();
+    this.aiClient.abort();
     this.mouse.dispose();
     this.orb.dispose();
     this.scene.dispose();
@@ -708,7 +969,6 @@ function start(): void {
 
   try {
     const app = new Application(canvas, ui);
-    // Exposed deliberately: handy when profiling from the console.
     const win = window as unknown as { ultimaitron?: unknown; nexus?: unknown };
     win.ultimaitron = app;
     win.nexus = app;

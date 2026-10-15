@@ -21,6 +21,10 @@ export interface DebugReadouts {
   triangles: number;
   programs: number;
   pixelRatio: number;
+  assistantState: string;
+  backend: string;
+  aiResponseMs: string;
+  firstTokenMs: string;
 }
 
 type ReadoutValue = string | number;
@@ -49,6 +53,10 @@ const ORDER: ReadoutRow[] = [
   ['triangles', 'TRIANGLES', integer],
   ['programs', 'PROGRAMS', integer],
   ['pixelRatio', 'PIXEL RATIO', fixed(2)],
+  ['assistantState', 'ASSISTANT STATE', text],
+  ['backend', 'BACKEND', text],
+  ['aiResponseMs', 'AI RESPONSE', text],
+  ['firstTokenMs', 'AI FIRST TOKEN', text],
 ];
 
 /**
@@ -130,6 +138,10 @@ export class DebugPanel {
       const node = this.values.get(key);
       if (node) node.textContent = format(value);
     }
+  }
+
+  updateAssistant(values: Pick<DebugReadouts, 'assistantState' | 'backend' | 'aiResponseMs' | 'firstTokenMs'>): void {
+    this.update(values);
   }
 
   /** Draws the landmark skeleton over the preview. */
