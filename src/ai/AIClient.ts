@@ -70,12 +70,29 @@ export class AIClient {
     };
 
     try {
-      const response = await fetch('/api/chat', {
+      let response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         signal: this.abortController.signal,
       });
+
+      if (response.status === 404) {
+        // Transparent fallback to /api/chat/stream with universal payload
+        const fallbackPayload = {
+          message: trimmed,
+          messages: [
+            ...this.messages.slice(-8).map((m) => ({ role: m.role, content: m.content })),
+            { role: 'user', content: trimmed },
+          ],
+        };
+        response = await fetch('/api/chat/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fallbackPayload),
+          signal: this.abortController.signal,
+        });
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -105,9 +122,12 @@ export class AIClient {
           if (jsonStr === '[DONE]') continue;
 
           try {
-            const event = JSON.parse(jsonStr) as { type: string; data: unknown };
-            if (event.type === 'token') {
-              const token = String(event.data);
+            const event = JSON.parse(jsonStr) as Record<string, unknown>;
+
+            // Support both v2 format {type: 'token', content: '...'} and legacy {token: '...'}
+            const rawToken = event.token ?? (event.type === 'token' ? (event.content ?? event.data) : null);
+            if (rawToken !== null && rawToken !== undefined) {
+              const token = String(rawToken);
               if (!firstTokenAt) {
                 firstTokenAt = performance.now();
                 this.lastTtftMs = Math.round(firstTokenAt - startedAt);
@@ -115,18 +135,22 @@ export class AIClient {
               fullReply += token;
               this.events.emit('token', token);
             } else if (event.type === 'tool_call') {
-              const tc = event.data as ToolCall;
+              const tc: ToolCall = {
+                id: String(event.id ?? Date.now()),
+                name: String(event.name ?? (event.data as Record<string, unknown>)?.name ?? ''),
+                arguments: (event.arguments ?? (event.data as Record<string, unknown>)?.arguments ?? {}) as Record<string, unknown>,
+              };
               collectedToolCalls.push(tc);
               this.events.emit('toolCall', tc);
             } else if (event.type === 'citation') {
-              const citations = event.data as Citation[];
+              const citations = (event.citations ?? event.data ?? []) as Citation[];
               collectedCitations.push(...citations);
               this.events.emit('citation', citations);
-            } else if (event.type === 'error') {
-              const err = String(event.data);
+            } else if (event.type === 'error' || event.error) {
+              const err = String(event.message ?? event.error ?? event.data ?? 'Provider error');
               this.events.emit('error', err);
             } else if (event.type === 'done') {
-              // Stream closed
+              // Stream terminal
             }
           } catch {
             // Partial JSON packet in line, ignore

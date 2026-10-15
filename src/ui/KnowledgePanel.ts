@@ -79,10 +79,18 @@ export class KnowledgePanel {
     formData.append('file', file);
 
     try {
-      const res = await fetch('/api/documents/upload', {
+      let res = await fetch('/api/documents/upload', {
         method: 'POST',
         body: formData,
       });
+
+      if (res.status === 404 || res.status === 405) {
+        // Fallback to /api/documents
+        res = await fetch('/api/documents', {
+          method: 'POST',
+          body: formData,
+        });
+      }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
