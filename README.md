@@ -9,10 +9,11 @@
   <img src="https://img.shields.io/badge/Python-3.12%20%7C%203.14-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/Docker-Multi--Container-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
+  <img src="https://img.shields.io/badge/Version-v2.0.0-blueviolet?style=for-the-badge" alt="Version 2.0.0" />
 </p>
 
 <p align="center">
-  <strong>A gesture-controlled holographic artificial intelligence core powered by WebGL/GLSL, MediaPipe computer vision, Web Speech STT/TTS, and a FastAPI Server-Sent Events (SSE) streaming backend with multi-provider LLM support and RAG document grounding.</strong>
+  <strong>A high-performance gesture-controlled holographic artificial intelligence companion core powered by Three.js/GLSL, MediaPipe computer vision, Web Speech STT/TTS, and a unified FastAPI Server-Sent Events (SSE) streaming gateway with multi-provider LLM support and RAG document grounding.</strong>
 </p>
 
 ---
@@ -33,8 +34,9 @@
 12. [Docker Deployment](#12-docker-deployment)
 13. [Verification & Test Suites](#13-verification--test-suites)
 14. [Keyboard & Gesture Reference](#14-keyboard--gesture-reference)
-15. [Limitations & Design Trade-offs](#15-limitations--design-trade-offs)
-16. [License](#16-license)
+15. [Security & Production Hardening](#15-security--production-hardening)
+16. [Limitations & Design Trade-offs](#16-limitations--design-trade-offs)
+17. [License](#17-license)
 
 ---
 
@@ -64,11 +66,11 @@ flowchart TD
         HUD["Aerospace HUD Panels<br/>(Chat Transcript · Diagnostics · Knowledge Vault)"]
     end
 
-    subgraph Server ["Backend Gateway (FastAPI · Python 3.12 / 3.14 · Uvicorn)"]
-        SSEEndpoint["SSE Chat Streaming Router<br/>(/api/chat)"]
-        RAGService["Document RAG Store<br/>(TF-IDF Cosine Retrieval)"]
+    subgraph Server ["Unified Canonical Gateway (FastAPI · backend/main.py)"]
+        SSEEndpoint["SSE Chat Streaming Router<br/>(POST /api/chat, /api/chat/stream)"]
+        RAGService["Document RAG Knowledge Store<br/>(TF-IDF Cosine Retrieval · PDF / TXT / MD)"]
         CommandRegistry["Command Allowlist Registry<br/>(Pydantic Schema Validation)"]
-        Providers["Multi-Provider LLM Gateway<br/>(Claude 3.5 · OpenAI GPT-4o · Ollama · Offline Mock)"]
+        Providers["Multi-Provider LLM Gateway<br/>(Anthropic · OpenAI · Ollama · Labeled Mock)"]
         
         SSEEndpoint --> CommandRegistry
         SSEEndpoint --> RAGService
@@ -210,11 +212,14 @@ $$\alpha = \frac{1}{1 + \frac{1}{2 \pi f_c \Delta t}}$$
 $$x_{\text{filtered}} = \alpha \cdot x + (1 - \alpha) \cdot x_{\text{prev}}$$
 with $f_{c,\min} = 1.2\text{ Hz}$ and $\beta = 0.007$.
 
+### 4.3 Clean Hardware Lifecycle
+Camera streams and audio tracks enforce strict user-initiated activation and full hardware resource release. Disabling camera or mic calls `.stop()` on every underlying `MediaStreamTrack`, immediately turning off hardware activity LEDs.
+
 ---
 
 ## 5. AI Companion Brain & Streaming Backend
 
-The backend is built with **Python 3.12+ and FastAPI**, providing production-grade Server-Sent Events (SSE) streaming, asynchronous concurrency, strict Pydantic data validation, and an allowlisted command execution engine.
+The backend is organized around a unified, canonical FastAPI gateway (`backend/main.py`), providing production-grade Server-Sent Events (SSE) streaming, asynchronous concurrency, strict Pydantic data validation, and an allowlisted command execution engine.
 
 ### 5.1 Multi-Provider Gateway
 
@@ -223,15 +228,15 @@ The backend dynamically selects between four LLM execution modes configured via 
 1. **Anthropic Claude**: Connects via official Anthropic REST streaming API (`claude-3-5-sonnet-20241022`).
 2. **OpenAI**: Connects to OpenAI v1 completions streaming API (`gpt-4o-mini`, `gpt-4o`).
 3. **Ollama (Local LLM)**: Connects to local Ollama daemon (`llama3.2`, `mistral`) for 100% offline edge inference.
-4. **Intelligent Offline Mock Assistant**: Zero-setup, standalone companion that answers technical queries, inspects system telemetry, and triggers valid tool calls without an API key or internet access.
+4. **Intelligent Offline Mock Assistant**: Zero-setup, standalone companion that answers technical queries, inspects system telemetry, and triggers valid tool calls without an API key or internet access. Explicitly labeled `[OFFLINE SIMULATION · MOCK AI CORE]`.
 
 ### 5.2 Server-Sent Events (SSE) Protocol
 
-Streaming tokens and actions are dispatched through `POST /api/chat`:
-- `data: {"type": "token", "content": "Hello"}` — Emitted as individual tokens are generated.
-- `data: {"type": "tool_call", "name": "change_orb_mode", "arguments": {"mode": "REACTOR"}}` — Dispatched when the LLM invokes an interface action.
-- `data: {"type": "citation", "citations": [...]}` — Dispatched when answers are grounded in uploaded documents.
-- `data: {"type": "done", "full_text": "...", "ttft_ms": 210.4, "total_ms": 840.1}` — Terminal frame containing latency benchmarks.
+Streaming tokens and actions are dispatched through `POST /api/chat` and `POST /api/chat/stream`:
+- `data: {"type": "token", "data": "Hello"}` or `data: {"token": "Hello"}` — Emitted as individual tokens stream in.
+- `data: {"type": "tool_call", "data": {"id": "call_1", "name": "change_orb_mode", "arguments": {"mode": "REACTOR"}}}` — Dispatched when the LLM invokes an interface action.
+- `event: sources` / `data: {"type": "citation", "data": [...]}` — Dispatched with document names, page numbers, and relevance scores.
+- `event: done` / `data: {"type": "done", "data": true}` — Terminal frame concluding the stream.
 
 ---
 
@@ -286,7 +291,7 @@ LLM Output ──► JSON Schema Validator ──► Allowlist Check ──► C
     "parameters": {
       "type": "object",
       "properties": {
-        "scale": { "type": "number", "minimum": 0.6, "maximum": 1.8 }
+        "scale": { "type": "number", "minimum": 0.62, "maximum": 1.85 }
       },
       "required": ["scale"]
     }
@@ -336,11 +341,14 @@ LLM Output ──► JSON Schema Validator ──► Allowlist Check ──► C
 The Document Knowledge Vault allows users to ground AI conversations in local reference documents:
 
 - **Supported Formats**: `.txt`, `.pdf`, `.md`, `.json` up to **10 MB**.
-- **Text Extraction**: Uses `pypdf` for clean multi-page PDF text extraction.
-- **Recursive Chunking**: Splits text into 400-character windows with 60-character sliding overlaps to maintain semantic cohesion.
+- **Security & DoS Protection**: 
+  - Maximum **1,000 PDF pages** per document.
+  - Maximum **1,000,000 characters** text extraction cap.
+  - Strict PDF magic signature validation (`%PDF-`) and corrupted PDF rejection.
+  - Path traversal defense with regex sanitization on filenames.
+- **Text Extraction & Citations**: Uses `pypdf` with page tracking to provide accurate page citations (`[Source: manual.pdf (p. 3)]`).
 - **TF-IDF Cosine Retrieval**: Evaluates query vectors against document chunk term-frequency matrices without external vector database dependencies:
   $$\text{sim}(Q, D_i) = \frac{\vec{q} \cdot \vec{d}_i}{\|\vec{q}\|_2 \|\vec{d}_i\|_2}$$
-- **Source Grounding & Citations**: Retrieved passages are injected into the LLM context prompt; answers render interactive citation pills (`[manual.pdf #Chunk 3]`).
 - **Insufficient Evidence Indication**: If document similarity falls below confidence thresholds, the system explicitly reports that the knowledge vault lacks relevant evidence rather than hallucinating.
 
 ---
@@ -372,22 +380,19 @@ ULTIMAITRON-UI-main/
 │   └── workflows/
 │       └── ci.yml             # GitHub Actions CI (Typecheck, Build, Pytest)
 ├── backend/
-│   ├── app/                   # Compatibility backend modules
 │   ├── routers/
-│   │   ├── chat.py            # SSE chat streaming router
-│   │   ├── documents.py       # RAG document upload and retrieval router
-│   │   └── system.py          # Health check & commands router
+│   │   ├── chat.py            # SSE chat streaming router (/api/chat, /api/chat/stream)
+│   │   ├── documents.py       # RAG upload, retrieval, and purge router
+│   │   └── system.py          # Health check, readiness & commands router
 │   ├── services/
 │   │   ├── command_registry.py# Safe allowlisted tool registry
-│   │   ├── llm_service.py     # Claude / OpenAI / Ollama / Mock adapters
+│   │   ├── llm_service.py     # Claude / OpenAI / Ollama / Labeled Mock adapters
 │   │   └── rag_service.py     # Chunking & TF-IDF cosine retrieval
-│   ├── tests/
-│   │   └── test_api.py        # Backend router tests
-│   ├── config.py              # Backend environment configuration
+│   ├── config.py              # Pydantic-settings configuration with env_file support
 │   ├── Dockerfile             # Python FastAPI container build
-│   ├── main.py                # FastAPI application entrypoint
+│   ├── main.py                # Single canonical FastAPI application gateway
 │   ├── requirements.txt       # Python dependencies
-│   └── schemas.py             # Pydantic models
+│   └── schemas.py             # Dual-schema compatible Pydantic models
 ├── deploy/
 │   └── nginx.conf             # Production reverse proxy (SSE unbuffered)
 ├── src/
@@ -419,7 +424,7 @@ ULTIMAITRON-UI-main/
 │   ├── config.ts              # Central configuration & tunable constants
 │   └── main.ts                # Application lifecycle bootstrap
 ├── tests/
-│   └── test_backend.py        # Comprehensive backend test suite
+│   └── test_backend.py        # Comprehensive backend test suite (15 tests)
 ├── docker-compose.yml         # Containerized multi-service deployment
 ├── Dockerfile                 # Frontend multi-stage Nginx build
 ├── package.json               # Node.js dependencies & scripts
@@ -434,7 +439,7 @@ ULTIMAITRON-UI-main/
 
 ### 11.1 Prerequisites
 - **Node.js**: v20.0 or higher
-- **Python**: v3.10 to v3.14
+- **Python**: v3.12 or v3.14
 - **Web Browser**: Modern browser with WebGL hardware acceleration enabled
 
 ### 11.2 Installation
@@ -500,7 +505,7 @@ npm run typecheck
 # 2. Production Vite Build
 npm run build
 
-# 3. Comprehensive Pytest Suite (All 16 tests passing)
+# 3. Comprehensive Pytest Suite (All 15 tests passing)
 .venv/bin/pytest -v
 ```
 
@@ -536,7 +541,17 @@ npm run build
 
 ---
 
-## 15. Limitations & Design Trade-offs
+## 15. Security & Production Hardening
+
+- **CORS Hardening**: Explicit origin whitelist sourced from environment (`FRONTEND_ORIGINS`), preventing wildcard origins from combining with credentialed sessions.
+- **Security Headers**: Standard injection of `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy: strict-origin-when-cross-origin`.
+- **Rate Limiting**: Sliding window rate-limiting middleware on all `/api/chat` and `/api/documents` endpoints (60 req/min default).
+- **Tool Call Allowlist**: Strict Pydantic parameter validation prevents arbitrary or unapproved command execution.
+- **Transparent LLM Mocking**: Responses in mock mode are explicitly tagged with `[OFFLINE SIMULATION · MOCK AI CORE]`.
+
+---
+
+## 16. Limitations & Design Trade-offs
 
 1. **Local Audio Loopback**: Browsers restrict programmatic audio capturing of `SpeechSynthesisUtterance` into Web Audio `AnalyserNode` instances without insecure permissions. ULTIMAITRON AI 2.0 solves this cleanly by synthesizing a multi-harmonic phonetic envelope ($A(t)$) that drives identical visual ripples across all browsers.
 2. **Scanned PDF OCR**: Document knowledge retrieval supports digital text-based PDF, TXT, MD, and JSON files. Scanned image-only PDFs require an external OCR pre-processing step.
@@ -544,7 +559,7 @@ npm run build
 
 ---
 
-## 16. License
+## 17. License
 
 This project is licensed under the **MIT License**.  
 Crafted for creative technology experimentation, real-time computer vision research, and next-generation human-AI interaction.
